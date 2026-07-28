@@ -11,24 +11,24 @@
     "lint:fix": "eslint src wxt.config.ts tailwind.config.ts --fix"
   },
   "dependencies": {
-    "@fontsource/plus-jakarta-sans": "^5.2.8",
-    "@radix-ui/react-select": "^2.2.6",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
+    "@radix-ui/react-select": "^2.3.7",
     "clsx": "^2.1.1",
     "lucide-react": "^0.545.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.264",
     "@types/react": "19.2.6",
     "@types/react-dom": "19.2.3",
-    "@wxt-dev/module-react": "^1.0.2",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.17",
+    "@wxt-dev/module-react": "^1.1.5",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.24",
+    "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3",
-    "wxt": "^0.19.14"
+    "wxt": "^0.19.29"
   }
 }
