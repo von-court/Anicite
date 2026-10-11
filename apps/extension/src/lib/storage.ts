@@ -1,4 +1,9 @@
-import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from './constants';
+import {
+  PAGE_KEY_PREFIX,
+  SETTINGS_KEY,
+  STORAGE_KEY,
+  STORE_VERSION,
+} from './constants';
 import { getLocalDateKey } from './date';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 
@@ -80,135 +85,95 @@ export async function updateSettings(
   return next;
 }
 
-export async function getStore(): Promise<Store> {
-  const result = await chrome.storage.local.get(STORAGE_KEY);
-  const stored = result[STORAGE_KEY] as Store | undefined;
+type StorageChanges = { [key: string]: chrome.storage.StorageChange };
 
-  if (!stored) {
-    return {
-      version: STORE_VERSION,
-      pages: {},
-    };
-  }
-
-  if (stored.version === 1) {
-    const migrated: Store = {
-      version: STORE_VERSION,
-      pages: {},
-    };
-
-    for (const [key, page] of Object.entries(stored.pages)) {
-      migrated.pages[key] = {
-        ...page,
-        byHour: {},
-      };
-    }
-
-    await setStore(migrated);
-    return migrated;
-  }
-
-  if (stored.version !== STORE_VERSION) {
-    return {
-      version: STORE_VERSION,
-      pages: {},
-    };
-  }
-
-  return stored;
+export function pageStorageKey(key: string): string {
+  return PAGE_KEY_PREFIX + key;
 }
 
-export async function setStore(store: Store): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY]: store });
+function legacyPages(stored: unknown): Record<string, PageStats> | undefined {
+  const legacy = stored as Store | undefined;
+  if (!legacy?.pages) return undefined;
+  if (legacy.version === STORE_VERSION) return legacy.pages;
+  if (legacy.version !== 1) return undefined;
+
+  const pages: Record<string, PageStats> = {};
+  for (const [key, page] of Object.entries(legacy.pages)) {
+    pages[key] = { ...page, byHour: {} };
+  }
+  return pages;
+}
+
+/**
+ * Moves the legacy single-key store to one key per page. The legacy key is
+ * removed only after every page is written, so an interrupted run is simply
+ * repeated. Only the background may call this, and before it writes any page:
+ * a re-run overwrites the page keys with the legacy values.
+ */
+export async function migrateLegacyStore(): Promise<void> {
+  const result = await chrome.storage.local.get(STORAGE_KEY);
+  const pages = legacyPages(result[STORAGE_KEY]);
+  if (!pages) return;
+
+  const items: Record<string, PageStats> = {};
+  for (const [key, page] of Object.entries(pages)) {
+    items[pageStorageKey(key)] = page;
+  }
+  await chrome.storage.local.set(items);
+  await chrome.storage.local.remove(STORAGE_KEY);
+}
+
+/** Reads every page. For the extension's own pages only: cost is O(store). */
+export async function getStore(): Promise<Store> {
+  const all = await chrome.storage.local.get(null);
+  // Not migrated yet: page keys, where present, are at least as new.
+  const pages = legacyPages(all[STORAGE_KEY]) ?? {};
+
+  for (const [storageKey, value] of Object.entries(all)) {
+    if (storageKey.startsWith(PAGE_KEY_PREFIX)) {
+      pages[storageKey.slice(PAGE_KEY_PREFIX.length)] = value as PageStats;
+    }
+  }
+
+  return { version: STORE_VERSION, pages };
+}
+
+/**
+ * Applies the page keys of a storage.onChanged event to `pages` in place.
+ * Returns whether any page changed.
+ */
+export function applyPageChanges(
+  pages: Record<string, PageStats>,
+  changes: StorageChanges
+): boolean {
+  let changed = false;
+  for (const [storageKey, change] of Object.entries(changes)) {
+    if (!storageKey.startsWith(PAGE_KEY_PREFIX)) continue;
+    const key = storageKey.slice(PAGE_KEY_PREFIX.length);
+    if (change.newValue) {
+      pages[key] = change.newValue as PageStats;
+    } else {
+      delete pages[key];
+    }
+    changed = true;
+  }
+  return changed;
 }
 
 export type StatsDelta = {
   visits?: number;
-  sessions?: number;
   activeMs?: number;
   clicks?: number;
   scrollDistance?: number;
   tabSwitches?: number;
 };
 
-export type UpdatePageArgs = {
-  key: string;
-  url: string;
-  host: string;
-  path?: string;
-  dateKey: string;
-  hourKey: string;
-  delta: StatsDelta;
-};
-
-export async function updatePageStats({
-  key,
-  url,
-  host,
-  path,
-  dateKey,
-  hourKey,
-  delta,
-}: UpdatePageArgs): Promise<void> {
-  const store = await getStore();
-  const now = Date.now();
-
-  const existing = store.pages[key];
-  const page: PageStats = existing ?? {
-    key,
-    url,
-    host,
-    path,
-    firstSeenAt: now,
-    lastSeenAt: now,
-    totals: emptyTotals(),
-    byDate: {},
-    byHour: {},
-  };
-
-  const day = page.byDate[dateKey] ?? emptyTotals();
-  const hour = page.byHour[hourKey] ?? emptyTotals();
-
-  const visits = delta.visits ?? 0;
-  const sessions = delta.sessions ?? 0;
-  const activeMs = delta.activeMs ?? 0;
-  const clicks = delta.clicks ?? 0;
-  const tabSwitches = delta.tabSwitches ?? 0;
-
-  page.totals.visits += visits;
-  page.totals.sessions += sessions;
-  page.totals.activeMs += activeMs;
-  page.totals.clicks += clicks;
-  page.totals.tabSwitches += tabSwitches;
-
-  day.visits += visits;
-  day.sessions += sessions;
-  day.activeMs += activeMs;
-  day.clicks += clicks;
-  day.tabSwitches += tabSwitches;
-
-  hour.visits += visits;
-  hour.sessions += sessions;
-  hour.activeMs += activeMs;
-  hour.clicks += clicks;
-  hour.tabSwitches += tabSwitches;
-
-  if (typeof delta.scrollDistance === 'number') {
-    page.totals.scrollDistance += delta.scrollDistance;
-    day.scrollDistance += delta.scrollDistance;
-    hour.scrollDistance += delta.scrollDistance;
-  }
-
-  page.lastSeenAt = now;
-  page.byDate[dateKey] = day;
-  page.byHour[hourKey] = hour;
-  store.pages[key] = page;
-
-  await setStore(store);
-}
-
 export async function clearStore(): Promise<void> {
-  await chrome.storage.local.remove(STORAGE_KEY);
+  const all = await chrome.storage.local.get(null);
+  await chrome.storage.local.remove([
+    STORAGE_KEY,
+    ...Object.keys(all).filter((key) => key.startsWith(PAGE_KEY_PREFIX)),
+  ]);
 }
 
 export type StorageUsage = {
@@ -257,6 +222,7 @@ export function aggregateByHost(pages: Record<string, PageStats>): PageStats[] {
       hostMap.set(page.host, {
         ...page,
         key: page.host, // Use host as the key for deduplication
+        totals: { ...page.totals },
       });
     }
   }
@@ -278,8 +244,8 @@ export async function deleteOlderThan(days: number): Promise<number> {
   const cutoffKey = getLocalDateKey(cutoffDate);
 
   let affectedCount = 0;
-  const newPages: Record<string, PageStats> = {};
-  let storeChanged = false;
+  const updated: Record<string, PageStats> = {};
+  const removed: string[] = [];
 
   for (const [key, page] of Object.entries(store.pages)) {
     const newByDate: Record<string, StatsTotals> = {};
@@ -306,8 +272,6 @@ export async function deleteOlderThan(days: number): Promise<number> {
     }
 
     if (pageChanged) {
-      storeChanged = true;
-
       // If no data left, we could delete the page entirely if we wanted strict cleanup.
       // However, we might want to keep the record that we visited this site (metadata).
       // For now, let's keep the page entry but with reduced totals.
@@ -318,7 +282,8 @@ export async function deleteOlderThan(days: number): Promise<number> {
 
       if (Object.keys(newByDate).length === 0) {
         affectedCount++;
-        continue; // Skip adding to newPages, effectively deleting it
+        removed.push(pageStorageKey(key));
+        continue;
       }
 
       affectedCount++;
@@ -334,7 +299,7 @@ export async function deleteOlderThan(days: number): Promise<number> {
         newTotals.tabSwitches += stats.tabSwitches;
       }
 
-      newPages[key] = {
+      updated[pageStorageKey(key)] = {
         ...page,
         totals: newTotals,
         byDate: newByDate,
@@ -345,15 +310,11 @@ export async function deleteOlderThan(days: number): Promise<number> {
         // effectively the page is gone due to the check above (Object.keys(newByDate).length === 0).
         // So this block is for pages that have SOME data remaining.
       };
-    } else {
-      newPages[key] = page;
     }
   }
 
-  if (storeChanged) {
-    store.pages = newPages;
-    await setStore(store);
-  }
+  await chrome.storage.local.set(updated);
+  await chrome.storage.local.remove(removed);
 
   return affectedCount;
 }

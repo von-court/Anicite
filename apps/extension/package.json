@@ -7,6 +7,7 @@
     "dev": "wxt",
     "build": "wxt build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test \"src/**/*.test.ts\"",
     "lint": "eslint src wxt.config.ts tailwind.config.ts",
     "lint:fix": "eslint src wxt.config.ts tailwind.config.ts --fix"
   },

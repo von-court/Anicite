@@ -1,11 +1,17 @@
 import type { BackgroundDefinition } from 'wxt';
 import { defineBackground } from 'wxt/sandbox';
 
-import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from '../lib/constants';
+import { SETTINGS_KEY } from '../lib/constants';
 import type { Message, StatsResponse } from '../lib/messaging';
 import { DEFAULT_SETTINGS } from '../lib/settings';
-import type { PageStats, StatsDelta, Store } from '../lib/storage';
-import { setSettings } from '../lib/storage';
+import type { PageStats, StatsDelta } from '../lib/storage';
+import {
+  migrateLegacyStore,
+  pageStorageKey,
+  setSettings,
+} from '../lib/storage';
+
+const SESSION_GAP_MS = 30 * 60 * 1000;
 
 function emptyTotals() {
   return {
@@ -32,6 +38,7 @@ class StatsWriteQueue {
     resolve: (response: StatsResponse) => void;
   }> = [];
   private processing = false;
+  private migrated = false;
 
   enqueue(
     payload: {
@@ -58,35 +65,22 @@ class StatsWriteQueue {
       const batch = this.queue.splice(0, this.queue.length);
 
       try {
-        const result = await chrome.storage.local.get(STORAGE_KEY);
-        const stored = result[STORAGE_KEY] as Store | undefined;
-        let store: Store;
-
-        if (!stored) {
-          store = { version: STORE_VERSION, pages: {} };
-        } else if (stored.version === 1) {
-          store = {
-            version: STORE_VERSION,
-            pages: {},
-          };
-          for (const [pageKey, page] of Object.entries(stored.pages)) {
-            store.pages[pageKey] = {
-              ...page,
-              byHour: {},
-            };
-          }
-        } else if (stored.version === STORE_VERSION) {
-          store = stored;
-        } else {
-          store = { version: STORE_VERSION, pages: {} };
+        if (!this.migrated) {
+          await migrateLegacyStore();
+          this.migrated = true;
         }
+
+        const pages: Record<string, PageStats> = await chrome.storage.local.get(
+          batch.map(({ payload }) => pageStorageKey(payload.key))
+        );
 
         const now = Date.now();
 
         for (const { payload } of batch) {
           const { key, url, host, path, dateKey, hourKey, delta } = payload;
 
-          const existing = store.pages[key];
+          const storageKey = pageStorageKey(key);
+          const existing = pages[storageKey];
           const page: PageStats = existing ?? {
             key,
             url,
@@ -107,7 +101,9 @@ class StatsWriteQueue {
           const hour = page.byHour[hourKey] ?? emptyTotals();
 
           const visits = delta.visits ?? 0;
-          const sessions = delta.sessions ?? 0;
+          const isNewSession =
+            !existing || now - existing.lastSeenAt > SESSION_GAP_MS;
+          const sessions = visits > 0 && isNewSession ? 1 : 0;
           const activeMs = delta.activeMs ?? 0;
           const clicks = delta.clicks ?? 0;
           const tabSwitches = delta.tabSwitches ?? 0;
@@ -139,10 +135,10 @@ class StatsWriteQueue {
           page.lastSeenAt = now;
           page.byDate[dateKey] = day;
           page.byHour[hourKey] = hour;
-          store.pages[key] = page;
+          pages[storageKey] = page;
         }
 
-        await chrome.storage.local.set({ [STORAGE_KEY]: store });
+        await chrome.storage.local.set(pages);
 
         for (const { resolve } of batch) {
           resolve({ success: true });

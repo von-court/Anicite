@@ -6,11 +6,10 @@ import { getLocalDateKey, getLocalHourKey } from '../lib/date';
 import type { PingMessage, PingResponse } from '../lib/messaging';
 import { sendUpdateStats } from '../lib/messaging';
 import { isHostExcluded } from '../lib/settings';
-import { getSettings, getStore } from '../lib/storage';
+import { getSettings } from '../lib/storage';
 import { getUrlParts } from '../lib/url';
 
 const FLUSH_INTERVAL_MS = 5000;
-const SESSION_GAP_MS = 30 * 60 * 1000;
 
 function isContextValid(): boolean {
   return typeof chrome !== 'undefined' && !!chrome.runtime?.id;
@@ -267,18 +266,6 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           lastActiveAt = Date.now();
         }
 
-        let store;
-        try {
-          store = await getStore();
-        } catch {
-          store = null;
-        }
-
-        const existingPage = store?.pages[newUrlParts.key];
-        const now = Date.now();
-        const isNewSession =
-          !existingPage || now - existingPage.lastSeenAt > SESSION_GAP_MS;
-
         try {
           await sendUpdateStats({
             key: newUrlParts.key,
@@ -289,7 +276,6 @@ const contentScript: ContentScriptDefinition = defineContentScript({
             hourKey: getLocalHourKey(),
             delta: {
               visits: 1,
-              sessions: isNewSession ? 1 : 0,
             },
           });
         } catch {
@@ -396,19 +382,6 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       return;
     }
 
-    let store;
-    try {
-      store = await getStore();
-    } catch {
-      stop();
-      return;
-    }
-
-    const existingPage = store.pages[urlParts.key];
-    const now = Date.now();
-    const isNewSession =
-      !existingPage || now - existingPage.lastSeenAt > SESSION_GAP_MS;
-
     try {
       const response = await sendUpdateStats({
         key: urlParts.key,
@@ -419,7 +392,6 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         hourKey: getLocalHourKey(),
         delta: {
           visits: 1,
-          sessions: isNewSession ? 1 : 0,
         },
       });
 
