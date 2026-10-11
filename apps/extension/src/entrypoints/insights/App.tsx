@@ -34,7 +34,7 @@ import {
   CATEGORY_SVG_COLORS,
   getCategoryForHost,
 } from '../../lib/categories';
-import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
+import { SETTINGS_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
 import { Favicon } from '../../lib/FaviconComponent';
 import { formatDuration } from '../../lib/format';
@@ -49,7 +49,12 @@ import {
   type Period,
 } from '../../lib/insights';
 import { DEFAULT_SETTINGS, type Settings } from '../../lib/settings';
-import { getSettings, getStore, type Store } from '../../lib/storage';
+import {
+  applyPageChanges,
+  getSettings,
+  getStore,
+  type Store,
+} from '../../lib/storage';
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'today', label: 'Today' },
@@ -407,6 +412,7 @@ export function App() {
   const [isPending, startTransition] = useTransition();
   const periodRef = useRef<Period>('today');
   const settingsRef = useRef<Settings>(DEFAULT_SETTINGS);
+  const storeRef = useRef<Store | null>(null);
 
   const updateFromStore = useCallback((store: Store) => {
     const aggregated = aggregateByPeriod(store, periodRef.current);
@@ -431,6 +437,7 @@ export function App() {
       ]);
       settingsRef.current = loadedSettings;
       setSettings(loadedSettings);
+      storeRef.current = store;
       updateFromStore(store);
       setIsLoading(false);
     };
@@ -450,8 +457,9 @@ export function App() {
         setSettings(newSettings);
       }
 
-      if (changes[STORAGE_KEY]?.newValue) {
-        updateFromStore(changes[STORAGE_KEY].newValue as Store);
+      const store = storeRef.current;
+      if (store && applyPageChanges(store.pages, changes)) {
+        updateFromStore(store);
       }
     };
 

@@ -19,7 +19,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Select,
@@ -35,7 +35,7 @@ import {
   CATEGORY_SVG_COLORS,
   getCategoryForHost,
 } from '../../lib/categories';
-import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from '../../lib/constants';
+import { SETTINGS_KEY, STORE_VERSION } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
 import { Favicon } from '../../lib/FaviconComponent';
 import {
@@ -47,6 +47,7 @@ import {
 } from '../../lib/settings';
 import {
   aggregateByHost,
+  applyPageChanges,
   clearStore,
   deleteOlderThan,
   getSettings,
@@ -162,6 +163,7 @@ function formatBytes(bytes: number): string {
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [trackedSites, setTrackedSites] = useState<PageStats[]>([]);
+  const pagesRef = useRef<Record<string, PageStats> | null>(null);
   const [categorySearch, setCategorySearch] = useState('');
   const [newHost, setNewHost] = useState('');
   const [hostError, setHostError] = useState<string | null>(null);
@@ -281,6 +283,7 @@ export function App() {
       setSettings(storedSettings);
       setStorageUsage(usage);
 
+      pagesRef.current = store.pages;
       const sites = aggregateByHost(store.pages);
       setTrackedSites(sites);
       setIsLoading(false);
@@ -299,12 +302,9 @@ export function App() {
         setSettings(changes[SETTINGS_KEY].newValue as Settings);
       }
 
-      if (changes[STORAGE_KEY]?.newValue) {
-        const store = changes[STORAGE_KEY].newValue as {
-          pages: Record<string, PageStats>;
-        };
-
-        const sites = aggregateByHost(store.pages);
+      const pages = pagesRef.current;
+      if (pages && applyPageChanges(pages, changes)) {
+        const sites = aggregateByHost(pages);
         setTrackedSites(sites);
 
         // Refresh storage usage
@@ -475,6 +475,7 @@ export function App() {
       const days = parseInt(pruneDays, 10);
       const count = await deleteOlderThan(days);
       const store = await getStore();
+      pagesRef.current = store.pages;
       const sites = aggregateByHost(store.pages);
       setTrackedSites(sites);
       const usage = await getStorageUsage();

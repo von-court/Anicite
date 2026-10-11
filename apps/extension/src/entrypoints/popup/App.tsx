@@ -27,7 +27,7 @@ import {
   CATEGORY_LIST,
   getCategoryForHost,
 } from '../../lib/categories';
-import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
+import { SETTINGS_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
 import { Favicon } from '../../lib/FaviconComponent';
 import { formatDuration } from '../../lib/format';
@@ -37,6 +37,7 @@ import {
   type Settings,
 } from '../../lib/settings';
 import {
+  applyPageChanges,
   getSettings,
   getStore,
   type StatsTotals,
@@ -220,6 +221,7 @@ export function App() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const currentKeyRef = useRef<string | null>(null);
+  const storeRef = useRef<Store | null>(null);
 
   const isExcluded = useMemo(() => {
     if (!currentHost) {
@@ -285,6 +287,7 @@ export function App() {
       }
 
       const store = await getStore();
+      storeRef.current = store;
       updateFromStore(store, storedSettings.siteCategories);
 
       setIsLoading(false);
@@ -306,11 +309,9 @@ export function App() {
         setSettings(currentSettings);
       }
 
-      if (changes[STORAGE_KEY]?.newValue) {
-        updateFromStore(
-          changes[STORAGE_KEY].newValue as Store,
-          currentSettings.siteCategories
-        );
+      const store = storeRef.current;
+      if (store && applyPageChanges(store.pages, changes)) {
+        updateFromStore(store, currentSettings.siteCategories);
       }
     };
 
