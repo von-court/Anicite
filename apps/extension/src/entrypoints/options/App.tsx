@@ -59,7 +59,6 @@ import {
   getStore,
   type PageStats,
   type StorageUsage,
-  type Store,
   updateSettings,
 } from '../../lib/storage';
 type ExportFormat = 'json' | 'csv';
@@ -423,19 +422,19 @@ export function App() {
 
   if (isLoading) {
     return (
-      <div className="bg-background text-foreground min-h-screen px-6 py-12">
+      <div className="min-h-screen bg-background px-6 py-12 text-foreground">
         <div className="mx-auto max-w-2xl">
           <header className="mb-10">
-            <div className="bg-muted h-3 w-16 animate-pulse rounded" />
-            <div className="bg-muted mt-3 h-7 w-32 animate-pulse rounded" />
-            <div className="bg-muted mt-2 h-4 w-64 animate-pulse rounded" />
+            <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+            <div className="mt-3 h-7 w-32 animate-pulse rounded bg-muted" />
+            <div className="mt-2 h-4 w-64 animate-pulse rounded bg-muted" />
           </header>
           <div className="space-y-8">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="card">
-                <div className="bg-muted h-5 w-24 animate-pulse rounded" />
-                <div className="bg-muted mt-2 h-3 w-48 animate-pulse rounded" />
-                <div className="bg-muted mt-4 h-10 w-full animate-pulse rounded" />
+                <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+                <div className="mt-2 h-3 w-48 animate-pulse rounded bg-muted" />
+                <div className="mt-4 h-10 w-full animate-pulse rounded bg-muted" />
               </div>
             ))}
           </div>
@@ -445,21 +444,21 @@ export function App() {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen px-6 py-12">
+    <div className="min-h-screen bg-background px-6 py-12 text-foreground">
       <div className="mx-auto max-w-2xl">
         <header className="mb-10">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-primary text-xs font-semibold uppercase tracking-widest">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
                 Anicite
               </p>
               <h1 className="mt-2 text-2xl font-semibold">Settings</h1>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Manage your tracking preferences and data.
               </p>
             </div>
             <button
-              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-2 transition-colors"
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={() =>
                 chrome.tabs.create({
                   url: chrome.runtime.getURL('insights.html'),
@@ -522,7 +521,7 @@ export function App() {
                       {settings.enabled ? 'Active' : 'Paused'}
                     </span>
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {settings.enabled
                       ? 'Monitoring your browsing activity'
                       : 'Data collection is paused'}
@@ -540,15 +539,15 @@ export function App() {
               </button>
             </div>
 
-            <div className="border-border border-t p-4">
+            <div className="border-t border-border p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h3 className="text-sm font-medium">Time Measurement</h3>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     When to count time on pages
                   </p>
                 </div>
-                <div className="bg-muted flex gap-1 rounded-lg p-1">
+                <div className="flex gap-1 rounded-lg bg-muted p-1">
                   <button
                     className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                       settings.trackingMode === 'focused'
@@ -606,10 +605,10 @@ export function App() {
               </div>
 
               <div className="bg-muted/50 mt-4 min-h-[4.5rem] rounded-lg px-3 py-2.5">
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   {settings.trackingMode === 'focused' ? (
                     <>
-                      <span className="text-foreground font-medium">
+                      <span className="font-medium text-foreground">
                         Focused mode:
                       </span>{' '}
                       Time counts only when the browser window is active. Best
@@ -617,7 +616,7 @@ export function App() {
                     </>
                   ) : (
                     <>
-                      <span className="text-foreground font-medium">
+                      <span className="font-medium text-foreground">
                         Visible mode:
                       </span>{' '}
                       Time counts whenever the tab is visible, even if another
@@ -633,27 +632,27 @@ export function App() {
           <section className="card overflow-hidden p-0">
             <div className="flex items-center justify-between gap-4 p-4">
               <div className="flex items-center gap-3">
-                <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
-                  <EyeOff className="text-muted-foreground h-5 w-5" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                  <EyeOff className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="font-semibold">Excluded Sites</h2>
                     {settings.excludeHosts.length > 0 && (
-                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                         {settings.excludeHosts.length} site
                         {settings.excludeHosts.length !== 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     Sites in this list won't be tracked
                   </p>
                 </div>
               </div>
               {settings.excludeHosts.length > 1 && (
                 <button
-                  className="text-muted-foreground hover:text-destructive flex items-center gap-1 text-xs transition-colors"
+                  className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
                   onClick={async () => {
                     if (
                       window.confirm(
@@ -672,10 +671,10 @@ export function App() {
               )}
             </div>
 
-            <div className="border-border border-t p-4">
+            <div className="border-t border-border p-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Globe className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     className={`input w-full pl-9 ${hostError ? 'border-destructive focus:border-destructive' : ''}`}
@@ -702,8 +701,8 @@ export function App() {
                 </button>
               </div>
               {hostError && (
-                <p className="text-destructive mt-2 flex items-center gap-1.5 text-xs">
-                  <span className="bg-destructive inline-block h-1 w-1 rounded-full" />
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
+                  <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                   {hostError}
                 </p>
               )}
@@ -713,23 +712,23 @@ export function App() {
                   {settings.excludeHosts.map((host) => (
                     <div
                       key={host}
-                      className="border-border bg-muted/30 hover:bg-muted/50 hover:border-muted-foreground/20 group flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-all"
+                      className="bg-muted/30 hover:bg-muted/50 hover:border-muted-foreground/20 group flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 transition-all"
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="bg-background flex h-7 w-7 shrink-0 items-center justify-center rounded-md shadow-sm">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-background shadow-sm">
                           <Favicon host={host} size={16} />
                         </div>
                         <div className="min-w-0">
                           <span className="block truncate text-sm font-medium leading-tight">
                             {host}
                           </span>
-                          <span className="text-muted-foreground text-[10px]">
+                          <span className="text-[10px] text-muted-foreground">
                             Includes all subdomains
                           </span>
                         </div>
                       </div>
                       <button
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all hover:opacity-[0.1]"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-destructive hover:text-destructive hover:opacity-[0.1]"
                         onClick={() => void handleRemoveExclusion(host)}
                         type="button"
                         title="Remove from exclusion list"
@@ -742,12 +741,12 @@ export function App() {
               ) : (
                 <div className="mt-6 flex flex-col items-center justify-center py-6 text-center">
                   <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-                    <Shield className="text-muted-foreground h-8 w-8" />
+                    <Shield className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-sm font-medium">
                     All sites are being tracked
                   </h3>
-                  <p className="text-muted-foreground mt-1 max-w-[240px] text-xs">
+                  <p className="mt-1 max-w-[240px] text-xs text-muted-foreground">
                     Add domains above to exclude specific sites from tracking.
                   </p>
                 </div>
@@ -757,23 +756,23 @@ export function App() {
 
           <section className="card overflow-hidden p-0">
             <div className="flex items-center gap-3 p-4">
-              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
-                <Tags className="text-muted-foreground h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                <Tags className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <h2 className="font-semibold">Site Categories</h2>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Categorize your sites to see time breakdowns in Insights
                 </p>
               </div>
             </div>
 
             {trackedSites.length > 0 ? (
-              <div className="border-border border-t p-4">
+              <div className="border-t border-border p-4">
                 <div className="flex items-center gap-2">
                   {trackedSites.length > 5 && (
                     <div className="relative flex-1">
-                      <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <input
                         type="text"
                         className="input w-full pl-9"
@@ -833,7 +832,7 @@ export function App() {
                             style={{ opacity: isActive ? 1 : 0.5 }}
                           />
                           {CATEGORIES[cat].label}
-                          <span className="text-muted-foreground text-[10px]">
+                          <span className="text-[10px] text-muted-foreground">
                             {categoryCounts[cat]}
                           </span>
                         </button>
@@ -852,7 +851,7 @@ export function App() {
                       return (
                         <div
                           key={site.key}
-                          className="border-border bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
+                          className="bg-muted/30 flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             <Favicon host={site.host} size={16} />
@@ -900,13 +899,13 @@ export function App() {
                     })}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground mt-6 text-center text-xs">
+                  <p className="mt-6 text-center text-xs text-muted-foreground">
                     No sites match your filters.
                   </p>
                 )}
 
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-xs text-muted-foreground">
                     {processedCategorySites.length} site
                     {processedCategorySites.length !== 1 ? 's' : ''}
                     {(categorySearch || activeCategoryFilters.size > 0) &&
@@ -917,18 +916,18 @@ export function App() {
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        className="text-muted-foreground hover:text-foreground p-1 transition-colors disabled:opacity-30"
+                        className="p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
                         disabled={categorySitesPage === 0}
                         onClick={() => setCategorySitesPage((p) => p - 1)}
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      <span className="text-muted-foreground text-xs tabular-nums">
+                      <span className="text-xs tabular-nums text-muted-foreground">
                         {categorySitesPage + 1} of {categoryTotalPages}
                       </span>
                       <button
                         type="button"
-                        className="text-muted-foreground hover:text-foreground p-1 transition-colors disabled:opacity-30"
+                        className="p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
                         disabled={categorySitesPage >= categoryTotalPages - 1}
                         onClick={() => setCategorySitesPage((p) => p + 1)}
                       >
@@ -940,7 +939,7 @@ export function App() {
 
                 {Object.keys(settings.siteCategories).length > 0 && (
                   <button
-                    className="text-muted-foreground mt-2 text-xs hover:underline"
+                    className="mt-2 text-xs text-muted-foreground hover:underline"
                     onClick={() => void handleResetCategories()}
                     type="button"
                   >
@@ -949,7 +948,7 @@ export function App() {
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground p-4 pt-0 text-xs">
+              <p className="p-4 pt-0 text-xs text-muted-foreground">
                 No tracked sites yet. Browse the web to start tracking.
               </p>
             )}
@@ -958,29 +957,29 @@ export function App() {
           {/* Data Management Section */}
           <section className="card overflow-hidden p-0">
             <div className="flex items-center gap-3 p-4">
-              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
-                <FolderArchive className="text-muted-foreground h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                <FolderArchive className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <h2 className="font-semibold">Data Management</h2>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Manage your locally stored browsing data
                 </p>
               </div>
             </div>
 
-            <div className="border-border border-t p-4">
+            <div className="border-t border-border p-4">
               {/* Storage Usage Sub-section */}
               {storageUsage && (
-                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                <div className="bg-muted/30 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
-                        <Database className="text-muted-foreground h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm">
+                        <Database className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
                         <span className="text-sm font-medium">Storage</span>
-                        <p className="text-muted-foreground text-[10px]">
+                        <p className="text-[10px] text-muted-foreground">
                           Local browser storage
                         </p>
                       </div>
@@ -989,7 +988,7 @@ export function App() {
                       <span className="text-lg font-semibold tabular-nums">
                         {formatBytes(storageUsage.bytesInUse)}
                       </span>
-                      <p className="text-muted-foreground text-[10px]">
+                      <p className="text-[10px] text-muted-foreground">
                         Unlimited capacity
                       </p>
                     </div>
@@ -1000,20 +999,20 @@ export function App() {
               {/* Export & Prune Row */}
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {/* Export Card */}
-                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                <div className="bg-muted/30 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
-                        <Download className="text-muted-foreground h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm">
+                        <Download className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
                         <span className="text-sm font-medium">Export</span>
-                        <p className="text-muted-foreground text-[10px]">
+                        <p className="text-[10px] text-muted-foreground">
                           Download your data
                         </p>
                       </div>
                     </div>
-                    <div className="bg-muted flex gap-0.5 rounded-md p-0.5">
+                    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
                       <button
                         type="button"
                         className={`rounded px-2 py-1 text-[10px] font-medium transition-all ${
@@ -1074,7 +1073,7 @@ export function App() {
                       {isExporting ? 'Exporting...' : 'Export'}
                     </button>
                     {exportSuccess && (
-                      <p className="text-success text-[11px]">
+                      <p className="text-[11px] text-success">
                         Exported as {exportSuccess.toUpperCase()}
                       </p>
                     )}
@@ -1082,14 +1081,14 @@ export function App() {
                 </div>
 
                 {/* Prune Card */}
-                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                <div className="bg-muted/30 rounded-lg border border-border p-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
-                      <Trash2 className="text-muted-foreground h-4 w-4" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm">
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
                       <span className="text-sm font-medium">Prune History</span>
-                      <p className="text-muted-foreground text-[10px]">
+                      <p className="text-[10px] text-muted-foreground">
                         Clean up old data
                       </p>
                     </div>
@@ -1126,7 +1125,7 @@ export function App() {
                       {isPruning ? 'Cleaning...' : 'Clean Up'}
                     </button>
                     {pruneSuccess && (
-                      <p className="text-success text-[11px]">{pruneSuccess}</p>
+                      <p className="text-[11px] text-success">{pruneSuccess}</p>
                     )}
                   </div>
                 </div>
@@ -1144,17 +1143,17 @@ export function App() {
                     'oklch(from var(--destructive) l c h / 0.15)',
                 }}
               >
-                <AlertTriangle className="text-destructive h-5 w-5" />
+                <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <div>
                 <h2 className="font-semibold">Danger Zone</h2>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Irreversible actions. Proceed with caution.
                 </p>
               </div>
             </div>
 
-            <div className="border-border border-t p-4">
+            <div className="border-t border-border p-4">
               {showClearConfirm ? (
                 <div className="space-y-3">
                   <div
@@ -1164,7 +1163,7 @@ export function App() {
                         'oklch(from var(--destructive) l c h / 0.1)',
                     }}
                   >
-                    <p className="text-destructive text-sm font-medium">
+                    <p className="text-sm font-medium text-destructive">
                       Are you sure? This will permanently delete all stored
                       browsing data.
                     </p>
@@ -1202,11 +1201,11 @@ export function App() {
                           'oklch(from var(--destructive) l c h / 0.15)',
                       }}
                     >
-                      <Trash2 className="text-destructive h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">Clear all data</p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-xs text-muted-foreground">
                         Delete all browsing history and statistics
                       </p>
                     </div>
@@ -1222,7 +1221,7 @@ export function App() {
               )}
 
               {clearSuccess && (
-                <p className="text-success mt-3 text-xs">
+                <p className="mt-3 text-xs text-success">
                   All browsing data has been cleared.
                 </p>
               )}
@@ -1242,96 +1241,96 @@ export function App() {
                 </div>
                 <div>
                   <h2 className="font-semibold">Privacy First</h2>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     How Anicite protects your data
                   </p>
                 </div>
               </div>
               <ChevronDown
-                className={`text-muted-foreground h-5 w-5 shrink-0 transition-transform duration-200 ${
+                className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${
                   isPrivacyExpanded ? 'rotate-180' : ''
                 }`}
               />
             </button>
 
             {isPrivacyExpanded && (
-              <div className="border-border border-t p-4">
+              <div className="border-t border-border p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   {/* Local Storage */}
-                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                  <div className="bg-muted/30 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <HardDrive className="text-muted-foreground h-4 w-4" />
+                      <HardDrive className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">100% Local</span>
                     </div>
-                    <p className="text-muted-foreground mt-1.5 text-xs">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       All data stays in your browser. Nothing leaves your
                       device.
                     </p>
                   </div>
 
                   {/* No Server */}
-                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                  <div className="bg-muted/30 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <Server className="text-muted-foreground h-4 w-4" />
+                      <Server className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">No Servers</span>
                     </div>
-                    <p className="text-muted-foreground mt-1.5 text-xs">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       Zero network requests. No accounts, no sync, no tracking.
                     </p>
                   </div>
 
                   {/* URL Sanitization */}
-                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                  <div className="bg-muted/30 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <Globe className="text-muted-foreground h-4 w-4" />
+                      <Globe className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">
                         URL Sanitization
                       </span>
                     </div>
-                    <p className="text-muted-foreground mt-1.5 text-xs">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       Only the domain address is stored. Query strings and
                       hashes are stripped.
                     </p>
                   </div>
 
                   {/* Incognito */}
-                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                  <div className="bg-muted/30 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <EyeOff className="text-muted-foreground h-4 w-4" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">
                         Incognito Blocked
                       </span>
                     </div>
-                    <p className="text-muted-foreground mt-1.5 text-xs">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       Extension is disabled in incognito mode by design.
                     </p>
                   </div>
 
                   {/* Data Control */}
-                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                  <div className="bg-muted/30 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <Lock className="text-muted-foreground h-4 w-4" />
+                      <Lock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Full Control</span>
                     </div>
-                    <p className="text-muted-foreground mt-1.5 text-xs">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       Export or delete your data anytime. You own everything.
                     </p>
                   </div>
 
                   {/* What's Tracked */}
-                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                  <div className="bg-muted/30 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <Database className="text-muted-foreground h-4 w-4" />
+                      <Database className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Minimal Data</span>
                     </div>
-                    <p className="text-muted-foreground mt-1.5 text-xs">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       Visits, time, clicks, scrolls, tab switches. Nothing
                       personal.
                     </p>
                   </div>
                 </div>
 
-                <p className="text-muted-foreground mt-4 text-center text-xs">
+                <p className="mt-4 text-center text-xs text-muted-foreground">
                   Anicite is open source.{' '}
                   <a
                     href="https://github.com/CarboxyDev/anicite"
