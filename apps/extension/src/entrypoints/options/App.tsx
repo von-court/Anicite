@@ -36,7 +36,11 @@ import {
   getCategoryForHost,
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORE_VERSION } from '../../lib/constants';
-import { getLocalDateKey } from '../../lib/date';
+import {
+  convertToCSV,
+  type ExportDateRange,
+  getDateRangeFilter,
+} from '../../lib/export';
 import { Favicon } from '../../lib/FaviconComponent';
 import {
   DEFAULT_SETTINGS,
@@ -59,7 +63,6 @@ import {
   updateSettings,
 } from '../../lib/storage';
 type ExportFormat = 'json' | 'csv';
-type ExportDateRange = 'all' | '7d' | '30d' | '90d';
 type CategorySortOption = 'activity' | 'name' | 'recent';
 
 const CATEGORY_SITES_PER_PAGE = 10;
@@ -70,78 +73,6 @@ const DATE_RANGE_LABELS: Record<ExportDateRange, string> = {
   '30d': 'Last 30 days',
   '90d': 'Last 90 days',
 };
-
-function getDateRangeFilter(range: ExportDateRange): (date: string) => boolean {
-  if (range === 'all') return () => true;
-
-  const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - (days - 1));
-  const cutoffStr = getLocalDateKey(cutoff);
-
-  return (date: string) => date >= cutoffStr;
-}
-
-function convertToCSV(
-  store: Store,
-  settings: Settings,
-  dateFilter: (date: string) => boolean
-): string {
-  const headers = [
-    'host',
-    'path',
-    'category',
-    'date',
-    'visits',
-    'sessions',
-    'activeMs',
-    'activeMinutes',
-    'clicks',
-    'scrollDistance',
-    'tabSwitches',
-  ];
-
-  const rows: string[][] = [];
-
-  for (const page of Object.values(store.pages)) {
-    const category = getCategoryForHost(page.host, settings.siteCategories);
-
-    for (const [date, stats] of Object.entries(page.byDate)) {
-      if (!dateFilter(date)) continue;
-      rows.push([
-        page.host,
-        page.path ?? '',
-        category,
-        date,
-        String(stats.visits),
-        String(stats.sessions),
-        String(stats.activeMs),
-        String(Math.round(stats.activeMs / 60000)),
-        String(stats.clicks),
-        String(stats.scrollDistance),
-        String(stats.tabSwitches),
-      ]);
-    }
-  }
-
-  rows.sort((a, b) => {
-    const dateCompare = b[3].localeCompare(a[3]);
-    if (dateCompare !== 0) return dateCompare;
-    return Number(b[6]) - Number(a[6]);
-  });
-
-  const escape = (val: string) => {
-    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-      return `"${val.replace(/"/g, '""')}"`;
-    }
-    return val;
-  };
-
-  return [
-    headers.join(','),
-    ...rows.map((row) => row.map(escape).join(',')),
-  ].join('\n');
-}
 
 const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
   productive: { bg: 'bg-emerald-500', text: 'text-emerald-500' },

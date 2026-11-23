@@ -2,16 +2,22 @@ import type { BackgroundDefinition } from 'wxt';
 import { defineBackground } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
+import { convertToCSV, type ExportDateRange, getDateRangeFilter } from '../lib/export';
 import type { Message, StatsResponse } from '../lib/messaging';
 import { DEFAULT_SETTINGS } from '../lib/settings';
 import type { PageStats, StatsDelta } from '../lib/storage';
 import {
+  getSettings,
+  getStore,
   migrateLegacyStore,
   pageStorageKey,
   setSettings,
 } from '../lib/storage';
 
 const SESSION_GAP_MS = 30 * 60 * 1000;
+// The CLI (native/anicite-export.mjs) is this host; it relays export requests from the command line.
+const NATIVE_HOST = 'com.von_court.anicite';
+const RANGES: ExportDateRange[] = ['all', '7d', '30d', '90d'];
 
 function emptyTotals() {
   return {
@@ -170,8 +176,34 @@ function handleMessage(
   return false;
 }
 
+type ExportRequest = { id: number; format?: string; range?: string };
+
+async function answerExport(req: ExportRequest) {
+  try {
+    if (req.format !== 'csv') throw new Error(`unsupported format ${req.format}`);
+    const range = RANGES.includes(req.range as ExportDateRange) ? (req.range as ExportDateRange) : 'all';
+    const [store, settings] = await Promise.all([getStore(), getSettings()]);
+    return { id: req.id, ok: true, csv: convertToCSV(store, settings, getDateRangeFilter(range)) };
+  } catch (err) {
+    return { id: req.id, ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
+/** Keeps a native port to the CLI host while Brave runs. Without the host installed, connecting just fails. */
+function connectHost(): void {
+  try {
+    const port = chrome.runtime.connectNative(NATIVE_HOST);
+    port.onMessage.addListener((req: ExportRequest) => {
+      void answerExport(req).then((reply) => port.postMessage(reply));
+    });
+  } catch {
+    // no host registered: the CLI reports that, the extension carries on
+  }
+}
+
 const background: BackgroundDefinition = defineBackground(() => {
   chrome.runtime.onMessage.addListener(handleMessage);
+  connectHost();
 
   chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     if (reason !== 'install') {

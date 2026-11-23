@@ -13,7 +13,7 @@ export default defineConfig({
       'Local-only analytics of your browsing activity. Understand your habits without compromising your privacy.',
     manifest_version: 3,
     incognito: 'not_allowed',
-    permissions: ['storage', 'unlimitedStorage'],
+    permissions: ['storage', 'unlimitedStorage', 'nativeMessaging'],
     host_permissions: ['http://*/*', 'https://*/*'],
     action: {
       default_title: 'Anicite',
